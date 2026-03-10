@@ -1,0 +1,604 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>动态展示页面</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        /* 动态文字标题 */
+        .dynamic-text-container {
+            text-align: center;
+            padding: 40px 20px;
+            min-height: 200px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .typing-text {
+            font-size: 2.5rem;
+            color: #fff;
+            font-weight: bold;
+            margin-bottom: 20px;
+            min-height: 60px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+        }
+
+        .cursor {
+            display: inline-block;
+            width: 3px;
+            height: 1em;
+            background-color: #fff;
+            animation: blink 1s infinite;
+            margin-left: 5px;
+            vertical-align: middle;
+        }
+
+        @keyframes blink {
+            0%, 50% { opacity: 1; }
+            51%, 100% { opacity: 0; }
+        }
+
+        .scramble-text {
+            font-size: 1.5rem;
+            color: rgba(255,255,255,0.9);
+            margin-top: 20px;
+            font-family: 'Courier New', monospace;
+            letter-spacing: 2px;
+        }
+
+        /* 图片轮播区域 */
+        .carousel-section {
+            margin: 40px 0;
+        }
+
+        .carousel-container {
+            position: relative;
+            width: 100%;
+            max-width: 800px;
+            margin: 0 auto;
+            border-radius: 20px;
+            overflow: hidden;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+        }
+
+        .carousel-slide {
+            display: none;
+            width: 100%;
+            animation: fadeEffect 0.8s ease-in-out;
+        }
+
+        .carousel-slide.active {
+            display: block;
+        }
+
+        @keyframes fadeEffect {
+            from { opacity: 0.4; transform: scale(0.95); }
+            to { opacity: 1; transform: scale(1); }
+        }
+
+        .carousel-slide img {
+            width: 100%;
+            height: 400px;
+            object-fit: cover;
+            display: block;
+        }
+
+        .carousel-caption {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: linear-gradient(to top, rgba(0,0,0,0.8), transparent);
+            color: white;
+            padding: 30px 20px 20px;
+            font-size: 1.2rem;
+            transform: translateY(100%);
+            transition: transform 0.3s ease;
+        }
+
+        .carousel-slide:hover .carousel-caption {
+            transform: translateY(0);
+        }
+
+        /* 控制按钮 */
+        .carousel-controls {
+            position: absolute;
+            top: 50%;
+            transform: translateY(-50%);
+            width: 100%;
+            display: flex;
+            justify-content: space-between;
+            padding: 0 15px;
+            pointer-events: none;
+        }
+
+        .carousel-btn {
+            background: rgba(255,255,255,0.2);
+            border: none;
+            color: white;
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            cursor: pointer;
+            font-size: 20px;
+            backdrop-filter: blur(10px);
+            transition: all 0.3s;
+            pointer-events: auto;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .carousel-btn:hover {
+            background: rgba(255,255,255,0.4);
+            transform: scale(1.1);
+        }
+
+        .carousel-indicators {
+            position: absolute;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            display: flex;
+            gap: 10px;
+        }
+
+        .indicator {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            background: rgba(255,255,255,0.5);
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .indicator.active {
+            background: white;
+            transform: scale(1.2);
+        }
+
+        /* 动态卡片区域 */
+        .cards-section {
+            margin: 60px 0;
+        }
+
+        .section-title {
+            text-align: center;
+            color: white;
+            font-size: 2rem;
+            margin-bottom: 40px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.2);
+        }
+
+        .cards-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 30px;
+        }
+
+        .dynamic-card {
+            background: rgba(255,255,255,0.1);
+            backdrop-filter: blur(10px);
+            border-radius: 20px;
+            padding: 30px;
+            color: white;
+            border: 1px solid rgba(255,255,255,0.2);
+            transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            cursor: pointer;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .dynamic-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
+            transition: left 0.5s;
+        }
+
+        .dynamic-card:hover::before {
+            left: 100%;
+        }
+
+        .dynamic-card:hover {
+            transform: translateY(-10px) rotateX(5deg);
+            box-shadow: 0 20px 40px rgba(0,0,0,0.3);
+            background: rgba(255,255,255,0.15);
+        }
+
+        .card-icon {
+            font-size: 3rem;
+            margin-bottom: 15px;
+            display: block;
+        }
+
+        .card-title {
+            font-size: 1.5rem;
+            margin-bottom: 10px;
+            font-weight: bold;
+        }
+
+        .card-text {
+            opacity: 0.9;
+            line-height: 1.6;
+        }
+
+        /* 浮动动画元素 */
+        .floating-shapes {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: -1;
+            overflow: hidden;
+        }
+
+        .shape {
+            position: absolute;
+            opacity: 0.1;
+            animation: float 20s infinite ease-in-out;
+        }
+
+        .shape:nth-child(1) {
+            left: 10%;
+            top: 20%;
+            width: 80px;
+            height: 80px;
+            background: white;
+            border-radius: 50%;
+            animation-delay: 0s;
+        }
+
+        .shape:nth-child(2) {
+            right: 15%;
+            top: 60%;
+            width: 120px;
+            height: 120px;
+            background: white;
+            clip-path: polygon(50% 0%, 100% 50%, 50% 100%, 0% 50%);
+            animation-delay: 5s;
+        }
+
+        .shape:nth-child(3) {
+            left: 70%;
+            top: 10%;
+            width: 60px;
+            height: 60px;
+            background: white;
+            border-radius: 10px;
+            animation-delay: 10s;
+        }
+
+        @keyframes float {
+            0%, 100% { transform: translateY(0) rotate(0deg); }
+            50% { transform: translateY(-100px) rotate(180deg); }
+        }
+
+        /* 响应式设计 */
+        @media (max-width: 768px) {
+            .typing-text {
+                font-size: 1.8rem;
+            }
+            
+            .scramble-text {
+                font-size: 1.1rem;
+            }
+            
+            .carousel-slide img {
+                height: 250px;
+            }
+            
+            .carousel-btn {
+                width: 40px;
+                height: 40px;
+                font-size: 16px;
+            }
+            
+            .cards-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        /* 加载动画 */
+        .loader {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: #667eea;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 9999;
+            transition: opacity 0.5s;
+        }
+
+        .loader.hidden {
+            opacity: 0;
+            pointer-events: none;
+        }
+
+        .loader-circle {
+            width: 60px;
+            height: 60px;
+            border: 4px solid rgba(255,255,255,0.3);
+            border-top-color: white;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body>
+    <!-- 加载动画 -->
+    <div class="loader" id="loader">
+        <div class="loader-circle"></div>
+    </div>
+
+    <!-- 背景浮动元素 -->
+    <div class="floating-shapes">
+        <div class="shape"></div>
+        <div class="shape"></div>
+        <div class="shape"></div>
+    </div>
+
+    <div class="container">
+        <!-- 动态文字区域 -->
+        <div class="dynamic-text-container">
+            <h1 class="typing-text" id="typingText"></h1>
+            <div class="scramble-text" id="scrambleText">初始化系统...</div>
+        </div>
+
+        <!-- 动态图片轮播 -->
+        <div class="carousel-section">
+            <div class="carousel-container" id="carousel">
+                <div class="carousel-slide active">
+                    <img src="https://picsum.photos/800/400?random=1" alt="图片1">
+                    <div class="carousel-caption">探索无限可能 · 第一张</div>
+                </div>
+                <div class="carousel-slide">
+                    <img src="https://picsum.photos/800/400?random=2" alt="图片2">
+                    <div class="carousel-caption">发现美好瞬间 · 第二张</div>
+                </div>
+                <div class="carousel-slide">
+                    <img src="https://picsum.photos/800/400?random=3" alt="图片3">
+                    <div class="carousel-caption">创造精彩未来 · 第三张</div>
+                </div>
+                <div class="carousel-slide">
+                    <img src="https://picsum.photos/800/400?random=4" alt="图片4">
+                    <div class="carousel-caption">分享独特视角 · 第四张</div>
+                </div>
+
+                <div class="carousel-controls">
+                    <button class="carousel-btn" onclick="changeSlide(-1)">❮</button>
+                    <button class="carousel-btn" onclick="changeSlide(1)">❯</button>
+                </div>
+
+                <div class="carousel-indicators" id="indicators"></div>
+            </div>
+        </div>
+
+        <!-- 动态卡片区域 -->
+        <div class="cards-section">
+            <h2 class="section-title">特色功能</h2>
+            <div class="cards-grid">
+                <div class="dynamic-card" onclick="animateCard(this)">
+                    <span class="card-icon">🎨</span>
+                    <h3 class="card-title">动态设计</h3>
+                    <p class="card-text">精心设计的交互动画，让页面充满活力与生机，给用户带来沉浸式体验。</p>
+                </div>
+                <div class="dynamic-card" onclick="animateCard(this)">
+                    <span class="card-icon">📱</span>
+                    <h3 class="card-title">移动优先</h3>
+                    <p class="card-text">完美适配各种移动设备，无论手机还是平板都能获得最佳浏览效果。</p>
+                </div>
+                <div class="dynamic-card" onclick="animateCard(this)">
+                    <span class="card-icon">⚡</span>
+                    <h3 class="card-title">极速加载</h3>
+                    <p class="card-text">优化的代码结构和资源加载策略，确保页面快速响应，流畅运行。</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // 页面加载完成后隐藏加载动画
+        window.addEventListener('load', () => {
+            setTimeout(() => {
+                document.getElementById('loader').classList.add('hidden');
+            }, 500);
+        });
+
+        // 打字机效果
+        const texts = ['欢迎来到动态世界', '体验极致交互', '创造无限可能'];
+        let textIndex = 0;
+        let charIndex = 0;
+        let isDeleting = false;
+        const typingElement = document.getElementById('typingText');
+
+        function typeEffect() {
+            const currentText = texts[textIndex];
+            
+            if (isDeleting) {
+                typingElement.innerHTML = currentText.substring(0, charIndex - 1) + '<span class="cursor"></span>';
+                charIndex--;
+            } else {
+                typingElement.innerHTML = currentText.substring(0, charIndex + 1) + '<span class="cursor"></span>';
+                charIndex++;
+            }
+
+            let typeSpeed = isDeleting ? 50 : 100;
+
+            if (!isDeleting && charIndex === currentText.length) {
+                typeSpeed = 2000;
+                isDeleting = true;
+            } else if (isDeleting && charIndex === 0) {
+                isDeleting = false;
+                textIndex = (textIndex + 1) % texts.length;
+                typeSpeed = 500;
+            }
+
+            setTimeout(typeEffect, typeSpeed);
+        }
+
+        // 文字扰乱效果
+        const scrambleElement = document.getElementById('scrambleText');
+        const finalText = "SYSTEM READY • 系统就绪";
+        const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789@#$%&*';
+        let scrambleInterval;
+
+        function scrambleEffect() {
+            let iteration = 0;
+            clearInterval(scrambleInterval);
+            
+            scrambleInterval = setInterval(() => {
+                scrambleElement.innerText = finalText
+                    .split('')
+                    .map((letter, index) => {
+                        if(index < iteration) {
+                            return finalText[index];
+                        }
+                        return chars[Math.floor(Math.random() * chars.length)];
+                    })
+                    .join('');
+                
+                if(iteration >= finalText.length) { 
+                    clearInterval(scrambleInterval);
+                }
+                
+                iteration += 1/3;
+            }, 30);
+        }
+
+        // 图片轮播功能
+        let slideIndex = 0;
+        const slides = document.getElementsByClassName('carousel-slide');
+        const indicatorsContainer = document.getElementById('indicators');
+
+        // 创建指示器
+        for (let i = 0; i < slides.length; i++) {
+            const indicator = document.createElement('div');
+            indicator.className = 'indicator' + (i === 0 ? ' active' : '');
+            indicator.onclick = () => goToSlide(i);
+            indicatorsContainer.appendChild(indicator);
+        }
+
+        function showSlide(n) {
+            const indicators = document.getElementsByClassName('indicator');
+            
+            if (n >= slides.length) slideIndex = 0;
+            if (n < 0) slideIndex = slides.length - 1;
+            
+            for (let i = 0; i < slides.length; i++) {
+                slides[i].classList.remove('active');
+                indicators[i].classList.remove('active');
+            }
+            
+            slides[slideIndex].classList.add('active');
+            indicators[slideIndex].classList.add('active');
+        }
+
+        function changeSlide(n) {
+            slideIndex += n;
+            showSlide(slideIndex);
+            resetAutoPlay();
+        }
+
+        function goToSlide(n) {
+            slideIndex = n;
+            showSlide(slideIndex);
+            resetAutoPlay();
+        }
+
+        // 自动播放
+        let autoPlayInterval = setInterval(() => {
+            slideIndex++;
+            showSlide(slideIndex);
+        }, 4000);
+
+        function resetAutoPlay() {
+            clearInterval(autoPlayInterval);
+            autoPlayInterval = setInterval(() => {
+                slideIndex++;
+                showSlide(slideIndex);
+            }, 4000);
+        }
+
+        // 卡片点击动画
+        function animateCard(card) {
+            card.style.transform = 'scale(0.95)';
+            setTimeout(() => {
+                card.style.transform = '';
+            }, 200);
+        }
+
+        // 鼠标跟随效果（桌面端）
+        文档。addEventListener('mousemove', (e) => {
+            const cards = 文档.querySelectorAll('.dynamic-card');
+            const mouseX = e.clientX / window.innerWidth - 0.5;
+            const mouseY = e.clientY / window.innerHeight - 0.5;
+
+            cards.forEach((card, index) => {
+                const depth = (index + 1) * 10;
+                const moveX = mouseX * depth;
+                const moveY = mouseY * depth;
+                card.style.transform = `translate(${moveX}px, ${moveY}px)`;
+            });
+        });
+
+        // 触摸滑动支持（移动端）
+        let touchStartX = 0;
+        let touchEndX = 0;
+        const carousel = 文档.getElementById('carousel');
+
+        carousel.addEventListener('touchstart', (e) => {
+            touchStartX = e.changedTouches[0].screenX;
+        });
+
+        carousel.addEventListener('touchend', (e) => {
+            touchEndX = e.changedTouches[0].screenX;
+            handleSwipe();
+        });
+
+        function handleSwipe() {
+            if (touchEndX < touchStartX - 50) changeSlide(1);
+            if (touchEndX > touchStartX + 50) changeSlide(-1);
+        }
+
+        // 初始化
+        typeEffect();
+        setTimeout(scrambleEffect, 1000);
+    </script>
+</body>
+</html>
